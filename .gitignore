@@ -1,0 +1,14 @@
+# Secrets - never commit real credentials
+.env
+
+# Virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Auto-generated local data
+seen_jobs.json
+search_history.json
+favorites.json
+outreach.json
+employers.json
