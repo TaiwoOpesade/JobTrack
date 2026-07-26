@@ -6,6 +6,12 @@ keeps track of the listings and employers you care about, and helps you run a
 polite, personal outreach campaign - every email is drafted for you to review
 and send yourself, never sent automatically.
 
+A minimal web version of the core loop (search, save favourites, track
+outreach) is also available, built with FastAPI - see
+[Web app](#web-app) below.
+
+**Live demo:** _add the deployed Render URL here_
+
 ## Features
 
 - **Search** - live Adzuna listings by keyword, with a location filter that
@@ -33,6 +39,7 @@ and send yourself, never sent automatically.
 |---|---|
 | Language | Python 3 |
 | GUI | [CustomTkinter](https://customtkinter.tomschimansky.com) (animated, dark themed) |
+| Web app | [FastAPI](https://fastapi.tiangolo.com) + Jinja2 server-rendered HTML, no JS framework |
 | HTTP | requests |
 | Config | python-dotenv (`.env` file) |
 | Job data | Adzuna Job Search API (free tier) |
@@ -40,10 +47,10 @@ and send yourself, never sent automatically.
 
 ## Setup
 
-1. **Install dependencies**
+1. **Install dependencies** (covers both the desktop app and the web app)
 
    ```
-   pip install customtkinter requests python-dotenv
+   pip install -r requirements.txt
    ```
 
 2. **Get free Adzuna credentials** at
@@ -72,6 +79,40 @@ python main.py
 If the credentials are missing the app prints a setup reminder instead of
 launching, so a missing `.env` never crashes it.
 
+## Web app
+
+A minimal FastAPI front-end covers the same core loop - search, saved
+listings, outreach tracking - as plain server-rendered HTML (Jinja2, no JS
+framework). It reuses `api.py`, `salary.py` and `db.py` (via `favorites.py`
+and `contacts.py`) unchanged; the desktop app keeps working exactly as before.
+
+```
+uvicorn web.main:app --reload
+```
+
+Then open `http://127.0.0.1:8000`. It reads `ADZUNA_APP_ID` / `ADZUNA_APP_KEY`
+from the same `.env` file as the desktop app, and shares the same
+`jobtrack.db` - a listing saved from the web app shows up in the desktop app
+and vice versa.
+
+### Deploy (Render)
+
+`render.yaml` deploys the web app to [Render](https://render.com)'s free tier:
+
+1. Push this repo to GitHub (already done) and create a new **Blueprint**
+   in Render pointing at it - Render reads `render.yaml` automatically.
+2. In the Render dashboard, set the `ADZUNA_APP_ID` and `ADZUNA_APP_KEY`
+   environment variables on the service (they're declared with `sync: false`
+   in `render.yaml`, so Render prompts for them and never stores them in
+   the repo).
+3. Deploy. Render runs `pip install -r requirements.txt` then
+   `uvicorn web.main:app --host 0.0.0.0 --port $PORT`.
+
+Note: Render's free tier has an ephemeral filesystem, so `jobtrack.db` is
+reset on each redeploy or restart - fine for a demo, but not durable storage.
+Add a persistent disk (a paid Render feature) if you need saved data to
+survive restarts.
+
 ## Project structure
 
 | File | Role |
@@ -88,6 +129,9 @@ launching, so a missing `.env` never crashes it.
 | `history.py` | Search history |
 | `stats.py` | Aggregates everything for the home dashboard |
 | `salary.py` | Hourly-rate detection and estimation |
+| `web/main.py` | FastAPI web app - search / favourites / outreach routes |
+| `web/templates/` | Jinja2 HTML templates for the web app |
+| `render.yaml` | Render deploy config for the web app |
 
 All local data (seen listings, saved listings/employers, outreach records,
 search history) lives in a single SQLite database, `jobtrack.db`, stored
