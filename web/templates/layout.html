@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}JobTrack{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>JobTrack</h1>
+        <nav>
+            <a href="/search" class="{{ 'active' if active_page == 'search' else '' }}">Search</a>
+            <a href="/favorites" class="{{ 'active' if active_page == 'favorites' else '' }}">Saved</a>
+            <a href="/outreach" class="{{ 'active' if active_page == 'outreach' else '' }}">Outreach</a>
+        </nav>
+    </header>
+    <main>
+        {% if error %}
+            <div class="message error">{{ error }}</div>
+        {% endif %}
+        {% if info %}
+            <div class="message info">{{ info }}</div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

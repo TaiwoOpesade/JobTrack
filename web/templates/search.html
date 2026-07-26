@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% from "_job_card.html" import job_card %}
+
+{% block title %}Search - JobTrack{% endblock %}
+
+{% block content %}
+<h2>Search Adzuna listings</h2>
+<form class="search-form" method="get" action="/search">
+    <input type="text" name="keyword" placeholder="Keyword (e.g. retail assistant)" value="{{ keyword or '' }}" required>
+    <input type="text" name="location" placeholder="Location or postcode (optional)" value="{{ location or '' }}">
+    <select name="distance">
+        <option value="0" {{ "selected" if distance == 0 else "" }}>Any distance</option>
+        {% for km in [5, 10, 15, 25, 50, 100] %}
+            <option value="{{ km }}" {{ "selected" if distance == km else "" }}>within {{ km }} km</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Search</button>
+</form>
+
+{% if summary %}
+    <p class="empty">{{ summary }}</p>
+{% endif %}
+
+{% if jobs %}
+    {% for job in jobs %}
+        {% set redirect_to = "/search?keyword=" + ((keyword or "") | urlencode) + "&location=" + ((location or "") | urlencode) + "&distance=" + (distance | string) %}
+        {{ job_card(job, job.id in saved_ids, job.id in tracked_ids, job.hourly, redirect_to=redirect_to) }}
+    {% endfor %}
+{% elif keyword %}
+    <p class="empty">No listings found.</p>
+{% endif %}
+{% endblock %}

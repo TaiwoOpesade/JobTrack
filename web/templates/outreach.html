@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block title %}Outreach - JobTrack{% endblock %}
+
+{% block content %}
+<h2>Tracked outreach</h2>
+
+{% if contacts %}
+    {% for contact in contacts %}
+        <div class="card">
+            <h3>{{ contact.job_title }}</h3>
+            <div class="subtitle">{{ contact.company }}</div>
+            <div class="actions">
+                {% if contact.job_url %}
+                    <a href="{{ contact.job_url }}" target="_blank" rel="noopener">
+                        <button type="button" class="secondary">View listing</button>
+                    </a>
+                {% endif %}
+
+                <form method="post" action="/outreach/{{ contact.job_id }}/email">
+                    <input type="email" name="email" placeholder="contact email"
+                           value="{{ contact.contact_email }}">
+                    <button type="submit" class="secondary">Save email</button>
+                </form>
+
+                <form method="post" action="/outreach/{{ contact.job_id }}/status">
+                    <select name="status">
+                        {% for status in statuses %}
+                            <option value="{{ status }}" {{ "selected" if status == contact.status else "" }}>{{ status }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="secondary">Update status</button>
+                </form>
+
+                {% if contact.date_contacted %}
+                    <span class="badge">contacted {{ contact.date_contacted }}</span>
+                {% endif %}
+
+                <form method="post" action="/outreach/{{ contact.job_id }}/untrack">
+                    <button type="submit" class="danger">✕ Untrack</button>
+                </form>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p class="empty">No employers tracked yet - use Track employer on a listing.</p>
+{% endif %}
+{% endblock %}

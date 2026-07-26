@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% from "_job_card.html" import job_card %}
+
+{% block title %}Saved - JobTrack{% endblock %}
+
+{% block content %}
+<h2>Saved listings</h2>
+
+{% if favorites %}
+    {% for job in favorites %}
+        {{ job_card(job, true, job.id in tracked_ids, job.hourly, redirect_to="/favorites") }}
+    {% endfor %}
+{% else %}
+    <p class="empty">Nothing saved yet - use Save on a search result.</p>
+{% endif %}
+{% endblock %}
