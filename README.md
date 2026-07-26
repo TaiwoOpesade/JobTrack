@@ -10,7 +10,7 @@ A minimal web version of the core loop (search, save favourites, track
 outreach) is also available, built with FastAPI - see
 [Web app](#web-app) below.
 
-**Live demo:** _add the deployed Render URL here_
+**Live demo:** https://jobtrack-j081.onrender.com
 
 ## Features
 
