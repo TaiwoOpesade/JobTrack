@@ -1,39 +1,21 @@
 """
 favorites.py
 Saves job listings the user wants to keep, so they survive between searches
-and app restarts. Persists to a local JSON file.
+and app restarts. Persists to the local SQLite database (jobtrack.db).
 """
 
-import json
-import os
 from datetime import date
 
-DATA_FILE = os.path.join(os.path.dirname(__file__), "favorites.json")
+import db
 
 
-def _load():
-    """Load all saved listings from disk.
-
-    Returns:
-        dict: Mapping of job_id (str) to saved listing dict.
-    """
-    if not os.path.exists(DATA_FILE):
-        return {}
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return {}
-
-
-def _save(records):
-    """Save all listings to disk.
-
-    Args:
-        records (dict): Mapping of job_id (str) to saved listing dict.
-    """
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(records, f, indent=2)
+def _to_public(record):
+    """Map a favorites row (job_id column) to the public dict shape (id key)."""
+    if record is None:
+        return None
+    public = dict(record)
+    public["id"] = public.pop("job_id")
+    return public
 
 
 def save_listing(job):
@@ -46,13 +28,12 @@ def save_listing(job):
     Returns:
         None. No-op if this job id is already saved.
     """
-    records = _load()
     job_id = str(job.get("id"))
 
-    if job_id in records:
+    if db.get_favorite(job_id) is not None:
         return
 
-    records[job_id] = {
+    db.add_favorite({
         "id": job_id,
         "title": job.get("title"),
         "company": job.get("company"),
@@ -62,8 +43,7 @@ def save_listing(job):
         "url": job.get("url"),
         "description": job.get("description"),
         "date_saved": date.today().isoformat(),
-    }
-    _save(records)
+    })
 
 
 def unsave_listing(job_id):
@@ -76,12 +56,7 @@ def unsave_listing(job_id):
     Returns:
         None. No-op if this job id isn't saved.
     """
-    records = _load()
-    job_id = str(job_id)
-
-    if job_id in records:
-        del records[job_id]
-        _save(records)
+    db.remove_favorite(job_id)
 
 
 def load_favorites():
@@ -91,8 +66,7 @@ def load_favorites():
     Returns:
         list[dict]: All saved listings, most recently saved last.
     """
-    records = _load()
-    return list(records.values())
+    return [_to_public(record) for record in db.get_all_favorites()]
 
 
 def is_saved(job_id):
@@ -105,5 +79,4 @@ def is_saved(job_id):
     Returns:
         bool: True if this job id is saved.
     """
-    records = _load()
-    return str(job_id) in records
+    return db.get_favorite(job_id) is not None

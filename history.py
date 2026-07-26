@@ -1,39 +1,12 @@
 """
 history.py
 Records every search the user runs, so the homepage can summarise their
-job-hunting activity. Persists to a local JSON file.
+job-hunting activity. Persists to the local SQLite database (jobtrack.db).
 """
 
-import json
-import os
 from datetime import date
 
-DATA_FILE = os.path.join(os.path.dirname(__file__), "search_history.json")
-
-
-def _load():
-    """Load the search history from disk.
-
-    Returns:
-        list[dict]: All recorded searches, oldest first.
-    """
-    if not os.path.exists(DATA_FILE):
-        return []
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return []
-
-
-def _save(entries):
-    """Save the search history to disk.
-
-    Args:
-        entries (list[dict]): All recorded searches.
-    """
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(entries, f, indent=2)
+import db
 
 
 def record_search(keyword, location, results_found, new_found):
@@ -49,15 +22,7 @@ def record_search(keyword, location, results_found, new_found):
     Returns:
         None.
     """
-    entries = _load()
-    entries.append({
-        "keyword": keyword,
-        "location": location,
-        "results_found": results_found,
-        "new_found": new_found,
-        "date": date.today().isoformat(),
-    })
-    _save(entries)
+    db.add_search(keyword, location, results_found, new_found, date.today().isoformat())
 
 
 def load_history():
@@ -67,7 +32,7 @@ def load_history():
     Returns:
         list[dict]: All recorded searches, oldest first.
     """
-    return _load()
+    return db.get_all_searches()
 
 
 def recent_searches(limit=5):
@@ -80,5 +45,5 @@ def recent_searches(limit=5):
     Returns:
         list[dict]: Up to `limit` recorded searches, newest first.
     """
-    entries = _load()
+    entries = db.get_all_searches()
     return list(reversed(entries[-limit:]))

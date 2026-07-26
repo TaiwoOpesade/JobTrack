@@ -36,7 +36,7 @@ and send yourself, never sent automatically.
 | HTTP | requests |
 | Config | python-dotenv (`.env` file) |
 | Job data | Adzuna Job Search API (free tier) |
-| Persistence | local JSON files - no database |
+| Persistence | local SQLite database (`jobtrack.db`), via Python's built-in `sqlite3` |
 
 ## Setup
 
@@ -78,6 +78,7 @@ launching, so a missing `.env` never crashes it.
 |---|---|
 | `main.py` | CustomTkinter GUI - pages, wiring and animations only |
 | `api.py` | Adzuna API wrapper (keyword / location / postcode / distance / company) |
+| `db.py` | SQLite access layer (`jobtrack.db`) - schema, one-time JSON import, all queries |
 | `storage.py` | Remembers seen listings so new ones can be flagged |
 | `favorites.py` | Saved listings |
 | `employers.py` | Saved employers |
@@ -88,5 +89,14 @@ launching, so a missing `.env` never crashes it.
 | `stats.py` | Aggregates everything for the home dashboard |
 | `salary.py` | Hourly-rate detection and estimation |
 
-All generated data (`seen_jobs.json`, `favorites.json`, `outreach.json`, etc.)
-is stored beside the code and ignored by git.
+All local data (seen listings, saved listings/employers, outreach records,
+search history) lives in a single SQLite database, `jobtrack.db`, stored
+beside the code and ignored by git. All reads and writes go through `db.py`;
+`storage.py`, `favorites.py`, `employers.py`, `contacts.py` and `history.py`
+keep their original public functions and just call into it.
+
+If you're upgrading from an older version of JobTrack that used JSON files
+(`seen_jobs.json`, `favorites.json`, `outreach.json`, `employers.json`,
+`search_history.json`), the first run automatically imports any of those
+files it finds into `jobtrack.db`. This happens once; the JSON files are
+left on disk untouched afterwards and are no longer read or written to.

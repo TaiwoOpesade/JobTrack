@@ -1,39 +1,12 @@
 """
 employers.py
 Saves employers the user wants to follow, so their current listings can be
-looked up on demand. Persists to a local JSON file.
+looked up on demand. Persists to the local SQLite database (jobtrack.db).
 """
 
-import json
-import os
 from datetime import date
 
-DATA_FILE = os.path.join(os.path.dirname(__file__), "employers.json")
-
-
-def _load():
-    """Load all saved employers from disk.
-
-    Returns:
-        dict: Mapping of employer name (str) to saved employer dict.
-    """
-    if not os.path.exists(DATA_FILE):
-        return {}
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return {}
-
-
-def _save(records):
-    """Save all employers to disk.
-
-    Args:
-        records (dict): Mapping of employer name (str) to saved employer dict.
-    """
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(records, f, indent=2)
+import db
 
 
 def save_employer(name):
@@ -50,15 +23,10 @@ def save_employer(name):
     if not name:
         return
 
-    records = _load()
-    if name in records:
+    if db.get_employer(name) is not None:
         return
 
-    records[name] = {
-        "name": name,
-        "date_saved": date.today().isoformat(),
-    }
-    _save(records)
+    db.add_employer(name, date.today().isoformat())
 
 
 def remove_employer(name):
@@ -71,10 +39,7 @@ def remove_employer(name):
     Returns:
         None. No-op if the employer isn't saved.
     """
-    records = _load()
-    if name in records:
-        del records[name]
-        _save(records)
+    db.remove_employer(name)
 
 
 def load_employers():
@@ -84,8 +49,7 @@ def load_employers():
     Returns:
         list[dict]: All saved employers, each with name and date_saved keys.
     """
-    records = _load()
-    return list(records.values())
+    return db.get_all_employers()
 
 
 def is_saved_employer(name):
@@ -98,5 +62,4 @@ def is_saved_employer(name):
     Returns:
         bool: True if this employer is saved.
     """
-    records = _load()
-    return (name or "").strip() in records
+    return db.get_employer((name or "").strip()) is not None
