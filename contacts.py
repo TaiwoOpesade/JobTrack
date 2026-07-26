@@ -1,41 +1,14 @@
 """
 contacts.py
 Tracks employers you've decided to reach out to about a job listing.
-Persists outreach records to a local JSON file between runs.
+Persists outreach records to the local SQLite database (jobtrack.db).
 """
 
-import json
-import os
 from datetime import date
 
-DATA_FILE = os.path.join(os.path.dirname(__file__), "outreach.json")
+import db
 
 VALID_STATUSES = ["not contacted", "emailed", "replied", "rejected"]
-
-
-def _load():
-    """Load all outreach records from disk.
-
-    Returns:
-        dict: Mapping of job_id (str) to outreach record dict.
-    """
-    if not os.path.exists(DATA_FILE):
-        return {}
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return {}
-
-
-def _save(records):
-    """Save all outreach records to disk.
-
-    Args:
-        records (dict): Mapping of job_id (str) to outreach record dict.
-    """
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(records, f, indent=2)
 
 
 def track_employer(job):
@@ -49,13 +22,12 @@ def track_employer(job):
     Returns:
         None. No-op if this job id is already tracked.
     """
-    records = _load()
     job_id = str(job.get("id"))
 
-    if job_id in records:
+    if db.get_contact(job_id) is not None:
         return
 
-    records[job_id] = {
+    db.add_contact({
         "job_id": job_id,
         "company": job.get("company"),
         "job_title": job.get("title"),
@@ -63,8 +35,7 @@ def track_employer(job):
         "contact_email": "",
         "status": "not contacted",
         "date_contacted": "",
-    }
-    _save(records)
+    })
 
 
 def untrack_employer(job_id):
@@ -77,12 +48,7 @@ def untrack_employer(job_id):
     Returns:
         None. No-op if this job id isn't tracked.
     """
-    records = _load()
-    job_id = str(job_id)
-
-    if job_id in records:
-        del records[job_id]
-        _save(records)
+    db.remove_contact(job_id)
 
 
 def load_contacts():
@@ -92,8 +58,7 @@ def load_contacts():
     Returns:
         list[dict]: All outreach records currently being tracked.
     """
-    records = _load()
-    return list(records.values())
+    return db.get_all_contacts()
 
 
 def is_tracked(job_id):
@@ -106,8 +71,7 @@ def is_tracked(job_id):
     Returns:
         bool: True if this job id has an outreach record.
     """
-    records = _load()
-    return str(job_id) in records
+    return db.get_contact(job_id) is not None
 
 
 def set_contact_email(job_id, email):
@@ -121,12 +85,9 @@ def set_contact_email(job_id, email):
     Returns:
         None. No-op if this job id isn't tracked.
     """
-    records = _load()
-    job_id = str(job_id)
-
-    if job_id in records:
-        records[job_id]["contact_email"] = email
-        _save(records)
+    if db.get_contact(job_id) is None:
+        return
+    db.update_contact_email(job_id, email)
 
 
 def set_status(job_id, status):
@@ -146,14 +107,8 @@ def set_status(job_id, status):
     if status not in VALID_STATUSES:
         raise ValueError(f"Invalid status: {status}")
 
-    records = _load()
-    job_id = str(job_id)
-
-    if job_id not in records:
+    if db.get_contact(job_id) is None:
         return
 
-    records[job_id]["status"] = status
-    if status == "emailed":
-        records[job_id]["date_contacted"] = date.today().isoformat()
-
-    _save(records)
+    date_contacted = date.today().isoformat() if status == "emailed" else None
+    db.update_contact_status(job_id, status, date_contacted)
