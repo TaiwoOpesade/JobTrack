@@ -124,6 +124,14 @@ reset on each redeploy or restart - fine for a demo, but not durable storage.
 Add a persistent disk (a paid Render feature) if you need saved data to
 survive restarts.
 
+## Known limitations
+
+- The deployed demo's SQLite database (`jobtrack.db`) lives on Render's
+  ephemeral free-tier disk, so saved listings, employers and outreach data
+  reset whenever the service redeploys or spins down after inactivity. A
+  managed database (e.g. Render's own Postgres, or a persistent disk) would
+  fix this if durable storage is needed.
+
 ## Project structure
 
 | File | Role |
