@@ -79,6 +79,17 @@ python main.py
 If the credentials are missing the app prints a setup reminder instead of
 launching, so a missing `.env` never crashes it.
 
+## Testing
+
+Automated tests cover `salary.py` (hourly-rate detection and estimation) and
+`api.py` (Adzuna request building and response parsing). All HTTP calls are
+mocked - no real network access or credentials are needed to run them.
+
+```
+pip install -r requirements-dev.txt
+pytest
+```
+
 ## Web app
 
 A minimal FastAPI front-end covers the same core loop - search, saved
